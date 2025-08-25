@@ -50,8 +50,11 @@ export async function POST(req: NextRequest) {
       },
       token,
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    // 👇 Validamos si err es una instancia de Error
+    const message =
+      err instanceof Error ? err.message : "Error desconocido en el servidor";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

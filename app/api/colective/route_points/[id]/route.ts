@@ -8,7 +8,7 @@ export async function PUT(
 ) {
   try {
     const { lat, lng, orden, tipo } = await req.json();
-    const id = await params;
+    const { id } = await params;
     const result = await pool.query(
       `UPDATE "BDproyect"."route_points"
        SET lat = $1, lng = $2, orden = $3, tipo = $4
@@ -31,7 +31,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = await params;
+    const { id } = await params;
 
     const result = await pool.query(
       `SELECT * FROM "BDproyect"."route_points"
@@ -54,7 +54,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = await params;
+    const { id } = await params;
 
     await pool.query(`DELETE FROM "BDproyect"."route_points" WHERE id = $1`, [
       id,

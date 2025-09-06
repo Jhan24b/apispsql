@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = await params;
+    const { id } = await params;
 
     const result = await pool.query(
       `SELECT r.*, 
@@ -42,7 +42,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = await params;
+    const { id } = await params;
     const { name, companyId } = await req.json();
     const result = await pool.query(
       `UPDATE "BDproyect"."route"
@@ -66,7 +66,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = await params;
+    const { id } = await params;
     await pool.query(`DELETE FROM "BDproyect"."route" WHERE id = $1`, [id]);
     return NextResponse.json({ success: true });
   } catch (err) {

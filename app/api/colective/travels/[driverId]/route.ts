@@ -6,7 +6,7 @@ export async function GET(
   { params }: { params: Promise<{ driverId: string }> }
 ) {
   try {
-    const driverId = await params;
+    const { driverId } = await params;
 
     const result = await pool.query(
       `SELECT rl.*, 

@@ -3,10 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ driverId: string }> }
 ) {
   try {
-    const { id } = params;
+    const driverId = await params;
 
     const result = await pool.query(
       `SELECT rl.*, 
@@ -16,7 +16,7 @@ export async function GET(
        WHERE rl.driver_id = $1
        GROUP BY rl.id
        ORDER BY rl.start_time DESC`,
-      [id]
+      [driverId]
     );
 
     return NextResponse.json({ routes: result.rows });

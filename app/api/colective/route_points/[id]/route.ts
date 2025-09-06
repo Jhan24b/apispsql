@@ -24,3 +24,46 @@ export async function PUT(
     );
   }
 }
+
+// GET /api/routes/[id]/points
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const id = await params;
+
+    const result = await pool.query(
+      `SELECT * FROM "BDproyect"."route_points"
+       WHERE route_id = $1
+       ORDER BY orden ASC`,
+      [id]
+    );
+    return NextResponse.json({ points: result.rows });
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Error" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/route-points/[id]
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const id = await params;
+
+    await pool.query(`DELETE FROM "BDproyect"."route_points" WHERE id = $1`, [
+      id,
+    ]);
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Error" },
+      { status: 500 }
+    );
+  }
+}

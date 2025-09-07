@@ -28,22 +28,19 @@ export async function PUT(
 // GET /api/routes/[id]/points
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { company_id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { company_id } = params;
+    const { id } = await params;
 
     const result = await pool.query(
-      `SELECT r.id, r.name, r.company_id
-       FROM "BDproyect"."route" r
-       WHERE r.company_id = $1`,
-      [company_id]
+      `SELECT * FROM "BDproyect"."route_points"
+       WHERE route_id = $1
+       ORDER BY orden ASC`,
+      [id]
     );
-
-    // ✅ devolvemos array plano de rutas
     return NextResponse.json(result.rows);
   } catch (err) {
-    console.error("Error en GET /routes/:company_id:", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Error" },
       { status: 500 }

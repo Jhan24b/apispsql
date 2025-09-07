@@ -20,10 +20,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const values = logs.map(
-      (i: number) =>
-        `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`
-    );
+    const values = logs
+      .map(
+        (l: LogEntry, i: number) =>
+          `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`
+      )
+      .join(",");
 
     const flatParams = logs.flatMap((l: LogEntry) => [
       l.deviceId,
@@ -34,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     const query = `
       INSERT INTO "modificaciones".notifications_log (device_id, app_name, message, received_at)
-      VALUES ${values.join(",")}
+      VALUES ${values}
       RETURNING *`;
 
     const result = await pool.query(query, flatParams);

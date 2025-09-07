@@ -22,7 +22,7 @@ export async function GET(
               ) AS points
        FROM "BDproyect"."route" r
        LEFT JOIN "BDproyect"."route_points" p ON r.id = p.route_id
-       WHERE r.id = $1
+       WHERE r.company_id = $1
        GROUP BY r.id`,
       [id]
     );

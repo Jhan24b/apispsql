@@ -10,20 +10,10 @@ export async function GET(
     const { id } = await params;
 
     const result = await pool.query(
-      `SELECT r.*, 
-              json_agg(
-                json_build_object(
-                  'id', p.id,
-                  'lat', p.lat,
-                  'lng', p.lng,
-                  'orden', p.orden,
-                  'tipo', p.tipo
-                ) ORDER BY p.orden
-              ) AS points
-       FROM "BDproyect"."route" r
-       LEFT JOIN "BDproyect"."route_points" p ON r.id = p.route_id
-       WHERE r.company_id = $1
-       GROUP BY r.id`,
+      `SELECT r.*
+      FROM "BDproyect"."route" r
+      WHERE r.company_id = $1
+      ORDER BY r.id;`,
       [id]
     );
 

@@ -1,6 +1,13 @@
 import pool from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
+type LogEntry = {
+  deviceId: string;
+  appName: string;
+  message?: string;
+  receivedAt: string;
+};
+
 export async function POST(req: NextRequest) {
   try {
     const { logs } = await req.json();
@@ -14,11 +21,11 @@ export async function POST(req: NextRequest) {
     }
 
     const values = logs.map(
-      (l: any, i: number) =>
+      (i: number) =>
         `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`
     );
 
-    const flatParams = logs.flatMap((l: any) => [
+    const flatParams = logs.flatMap((l: LogEntry) => [
       l.deviceId,
       l.appName,
       l.message || null,

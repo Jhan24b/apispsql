@@ -17,7 +17,7 @@ export async function GET(
       [id]
     );
 
-    return NextResponse.json(result.rows[0]);
+    return NextResponse.json(result.rows);
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Error" },

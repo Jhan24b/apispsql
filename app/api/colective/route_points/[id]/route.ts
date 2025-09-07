@@ -28,19 +28,22 @@ export async function PUT(
 // GET /api/routes/[id]/points
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { company_id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { company_id } = params;
 
     const result = await pool.query(
-      `SELECT * FROM "BDproyect"."route_points"
-       WHERE route_id = $1
-       ORDER BY orden ASC`,
-      [id]
+      `SELECT r.id, r.name, r.company_id
+       FROM "BDproyect"."route" r
+       WHERE r.company_id = $1`,
+      [company_id]
     );
-    return NextResponse.json({ points: result.rows });
+
+    // ✅ devolvemos array plano de rutas
+    return NextResponse.json(result.rows);
   } catch (err) {
+    console.error("Error en GET /routes/:company_id:", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Error" },
       { status: 500 }
@@ -57,7 +60,7 @@ export async function DELETE(
     const { id } = await params;
 
     await pool.query(`DELETE FROM "BDproyect"."route_points" WHERE id = $1`, [
-      id,
+      id
     ]);
     return NextResponse.json({ success: true });
   } catch (err) {

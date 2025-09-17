@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
     const { driver_id, amount } = await req.json();
 
     const result = await pool.query(
-      `INSERT INTO "BDproyect"."drivers" (driver_id, amount, created_at)
+      `INSERT INTO "BDproyect"."payments" (driver_id, amount, created_at)
        VALUES ($1, $2, CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima') RETURNING *`,
       [driver_id, amount]
     );
@@ -32,18 +32,34 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const { company_id } = await req.json();
     const result = await pool.query(
-      `SELECT d.*
-      FROM "BDproyect"."drivers" d
-      JOIN "BDproyect"."users" u ON d.user_id = u.id
-      WHERE u.company_id = $1`,
-      [company_id]
+      `SELECT *
+       FROM "BDproyect"."payments"
+       WHERE created_at::date = (CURRENT_DATE AT TIME ZONE 'America/Lima')`
     );
 
-    return NextResponse.json(result.rows);
+    const payments = result.rows.map((row) => ({
+      ...row,
+      created_at: row.created_at
+        ? DateTime.fromJSDate(row.created_at)
+            .setZone("America/Lima")
+            .toISO({ suppressMilliseconds: true })
+        : null,
+      paid_at: row.paid_at
+        ? DateTime.fromJSDate(row.paid_at)
+            .setZone("America/Lima")
+            .toISO({ suppressMilliseconds: true })
+        : null,
+      verified_at: row.verified_at
+        ? DateTime.fromJSDate(row.verified_at)
+            .setZone("America/Lima")
+            .toISO({ suppressMilliseconds: true })
+        : null
+    }));
+
+    return NextResponse.json({ payments });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Error" },

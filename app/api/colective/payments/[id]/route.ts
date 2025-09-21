@@ -47,13 +47,13 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const { status, method, verified } = await req.json();
+    const { status, method } = await req.json();
 
-    if (verified) {
+    if (status === "Verified") {
       const result = await pool.query(
         `UPDATE "BDproyect"."payments"
         SET
-            verified_at = CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima'
+          verified_at = CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima'
         WHERE id = $1
         RETURNING *`,
         [id]

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const { routeId } = await req.json();
+    const { travel_id } = await req.json();
 
     const result = await pool.query(
       `UPDATE "BDproyect"."travel"
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
            completed = true
        WHERE id = $1
        RETURNING *`,
-      [routeId]
+      [travel_id]
     );
 
     if (result.rowCount === 0) {

@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
 
     const result = await pool.query(
       `UPDATE "BDproyect"."travel"
-       SET end_time = CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima',
+       SET ended_at = CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima',
            duration = (CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima') - started_at,
            completed = true
        WHERE id = $1

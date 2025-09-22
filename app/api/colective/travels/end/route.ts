@@ -7,23 +7,22 @@ export async function POST(req: NextRequest) {
 
     const result = await pool.query(
       `UPDATE "BDproyect"."travel"
-       SET end_time = now(),
-           duration = now() - start_time,
+       SET end_time = CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima',
+           duration = (CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima') - started_at,
            completed = true
        WHERE id = $1
        RETURNING *`,
       [routeId]
     );
 
-    const route = result.rows[0];
+    if (result.rowCount === 0) {
+      return NextResponse.json(
+        { error: "No se encontró la ruta con ese ID" },
+        { status: 404 }
+      );
+    }
 
-    await pool.query(
-      `INSERT INTO "BDproyect"."payments" (travel_id, amount)
-       VALUES ($1, $2)`,
-      [route.driver_id, 5]
-    );
-
-    return NextResponse.json({ route });
+    return NextResponse.json({ route: result.rows[0] });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Error desconocido" },

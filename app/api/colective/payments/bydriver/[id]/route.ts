@@ -42,7 +42,7 @@ export async function GET(
       JOIN "BDproyect"."drivers" d ON p.driver_id = d.id
       JOIN "BDproyect"."users" u ON d.user_id = u.id
       JOIN "BDproyect"."cars" car ON d.car_id = car.id
-      WHERE u.driver_id = $1
+      WHERE p.driver_id = $1
         AND DATE(p.created_at) >= $2
         AND DATE(p.created_at) <= $3
       ORDER BY p.created_at DESC`,

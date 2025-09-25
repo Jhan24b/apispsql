@@ -2,14 +2,19 @@ import pool from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
 
-    const result = await pool.query(
-      `SELECT
+    // obtener query params
+    const { searchParams } = new URL(req.url);
+    const status = searchParams.get("status");
+
+    // construir query dinámico
+    let query = `
+      SELECT
         d.id AS driver_id,
         d.license,
         d.lat,
@@ -28,9 +33,17 @@ export async function GET(
       JOIN "BDproyect"."users" u ON d.user_id = u.id
       JOIN "BDproyect"."cars" car ON d.car_id = car.id
       JOIN "BDproyect"."route" r ON r.id = d.route_id
-      WHERE u.company_id = $1`,
-      [id]
-    );
+      WHERE u.company_id = $1
+    `;
+
+    const paramsArr: string[] = [id];
+
+    if (status) {
+      query += ` AND d.status = $2`;
+      paramsArr.push(status);
+    }
+
+    const result = await pool.query(query, paramsArr);
 
     const drivers = result.rows.map((row) => ({
       id: row.driver_id,

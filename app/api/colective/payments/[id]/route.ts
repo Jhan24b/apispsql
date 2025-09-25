@@ -49,7 +49,7 @@ export async function PUT(
     const { id } = await params;
     const { status, method } = await req.json();
 
-    if (status === "Verified") {
+    if (status === "Verificado") {
       const result = await pool.query(
         `UPDATE "BDproyect"."payments"
         SET

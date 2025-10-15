@@ -1,37 +1,30 @@
 import pool from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { user_id, license, car_id, route_id, lat, lng, status } =
-      await req.json();
+    const { id } = await params;
+    const { status } = await req.json();
 
-    // Validaciones básicas
-    if (!user_id || !license) {
+    if (!status) {
       return NextResponse.json(
-        { error: "user_id y license son obligatorios" },
+        { error: "El campo status es obligatorio" },
         { status: 400 }
       );
     }
 
-    const result = await pool.query(
-      `INSERT INTO "BDproyect"."drivers" 
-       (user_id, license, car_id, route_id, lat, lng, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) 
-       RETURNING *`,
-      [
-        user_id,
-        license,
-        car_id || null,
-        route_id || null,
-        lat || 0,
-        lng || 0,
-        status || "Disponible"
-      ]
+    await pool.query(
+      `UPDATE "BDproyect"."drivers" 
+       SET status = $1
+       WHERE id = $2`,
+      [status, id]
     );
 
-    // Obtener el driver completo con sus relaciones
-    const driverResult = await pool.query(
+    // Obtener el driver actualizado
+    const result = await pool.query(
       `SELECT
         d.id AS driver_id,
         d.license,
@@ -52,10 +45,10 @@ export async function POST(req: NextRequest) {
       LEFT JOIN "BDproyect"."cars" car ON d.car_id = car.id
       LEFT JOIN "BDproyect"."route" r ON r.id = d.route_id
       WHERE d.id = $1`,
-      [result.rows[0].id]
+      [id]
     );
 
-    const row = driverResult.rows[0];
+    const row = result.rows[0];
     const driver = {
       id: row.driver_id,
       license: row.license,
@@ -86,7 +79,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(driver);
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Error creando conductor" },
+      {
+        error: err instanceof Error ? err.message : "Error actualizando estado"
+      },
       { status: 500 }
     );
   }

@@ -88,7 +88,7 @@ export async function PUT(
 
     // Construir query dinámico
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: (string | number)[] = [];
     let paramIndex = 1;
 
     if (license !== undefined) {

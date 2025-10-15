@@ -47,13 +47,13 @@ export async function GET(
 
     const drivers = result.rows.map((row) => ({
       id: row.driver_id,
+      name: row.user_name,
       license: row.license,
       lat: row.lat,
       lng: row.lng,
       status: row.status,
       user: {
         id: row.user_id,
-        name: row.user_name,
         photo: row.user_photo
       },
       route: {

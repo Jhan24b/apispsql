@@ -1,28 +1,99 @@
 import pool from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
+  const client = await pool.connect();
+
   try {
-    const { user_id, license, car_id, route_id, lat, lng, status } =
-      await req.json();
+    const {
+      name,
+      email,
+      license,
+      route_id,
+      lat,
+      lng,
+      status,
+      car_license_plate,
+      car_model,
+      car_observations,
+      company_id
+    } = await req.json();
 
     // Validaciones básicas
-    if (!user_id || !license) {
+    if (!name || !license) {
       return NextResponse.json(
-        { error: "user_id y license son obligatorios" },
+        { error: "name y license son obligatorios" },
         { status: 400 }
       );
     }
 
-    const result = await pool.query(
+    // Iniciar transacción
+    await client.query("BEGIN");
+
+    // 1. CREAR USUARIO
+    // Generar email si no existe
+    const userEmail = email || `${license.toLowerCase()}@driver.com`;
+
+    // Generar contraseña temporal
+    const tempPassword = await bcrypt.hash("drivercolective341", 10);
+
+    // Foto genérica
+    const defaultPhoto =
+      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face";
+
+    const userResult = await client.query(
+      `INSERT INTO "BDproyect"."users" 
+       (email, password, name, photo, role, company_id)
+       VALUES ($1, $2, $3, $4, $5, $6) 
+       RETURNING id`,
+      [userEmail, tempPassword, name, defaultPhoto, "driver", company_id || 1]
+    );
+
+    const userId = userResult.rows[0].id;
+
+    // 2. CREAR AUTO (si hay datos o crear uno genérico)
+    let carId = null;
+
+    if (car_license_plate && car_license_plate.trim()) {
+      // Crear auto con datos proporcionados
+      const carResult = await client.query(
+        `INSERT INTO "BDproyect"."cars" 
+         (license_plate, model, observations)
+         VALUES ($1, $2, $3) 
+         RETURNING id`,
+        [
+          car_license_plate.toUpperCase(),
+          car_model || "Sin especificar",
+          car_observations || ""
+        ]
+      );
+      carId = carResult.rows[0].id;
+    } else {
+      // Crear auto genérico
+      const genericPlate = `GEN-${Math.floor(Math.random() * 9999)
+        .toString()
+        .padStart(4, "0")}`;
+      const carResult = await client.query(
+        `INSERT INTO "BDproyect"."cars" 
+         (license_plate, model, observations)
+         VALUES ($1, $2, $3) 
+         RETURNING id`,
+        [genericPlate, "Vehículo genérico", "Auto asignado temporalmente"]
+      );
+      carId = carResult.rows[0].id;
+    }
+
+    // 3. CREAR DRIVER
+    const driverResult = await client.query(
       `INSERT INTO "BDproyect"."drivers" 
        (user_id, license, car_id, route_id, lat, lng, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7) 
-       RETURNING *`,
+       RETURNING id`,
       [
-        user_id,
-        license,
-        car_id || null,
+        userId,
+        license.toUpperCase(),
+        carId,
         route_id || null,
         lat || 0,
         lng || 0,
@@ -30,8 +101,11 @@ export async function POST(req: NextRequest) {
       ]
     );
 
-    // Obtener el driver completo con sus relaciones
-    const driverResult = await pool.query(
+    // Confirmar transacción
+    await client.query("COMMIT");
+
+    // 4. OBTENER EL DRIVER COMPLETO CON TODAS SUS RELACIONES
+    const driverCompleteResult = await pool.query(
       `SELECT
         d.id AS driver_id,
         d.license,
@@ -52,21 +126,18 @@ export async function POST(req: NextRequest) {
       LEFT JOIN "BDproyect"."cars" car ON d.car_id = car.id
       LEFT JOIN "BDproyect"."route" r ON r.id = d.route_id
       WHERE d.id = $1`,
-      [result.rows[0].id]
+      [driverResult.rows[0].id]
     );
 
-    const row = driverResult.rows[0];
+    const row = driverCompleteResult.rows[0];
     const driver = {
       id: row.driver_id,
+      name: row.user_name,
+      photo: row.user_photo,
       license: row.license,
       lat: row.lat,
       lng: row.lng,
       status: row.status,
-      user: {
-        id: row.user_id,
-        name: row.user_name,
-        photo: row.user_photo
-      },
       route: row.route_id
         ? {
             id: row.route_id,
@@ -78,16 +149,37 @@ export async function POST(req: NextRequest) {
             id: row.car_id,
             license_plate: row.license_plate,
             model: row.model,
-            observations: row.observations
+            observation: row.observations
           }
         : null
     };
 
-    return NextResponse.json(driver);
+    return NextResponse.json(driver, { status: 201 });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Error creando conductor" },
-      { status: 500 }
-    );
+    // Rollback en caso de error
+    await client.query("ROLLBACK");
+
+    console.log("Error en createDriver:", JSON.stringify(err, null, 2));
+
+    let errorMsg = "Error creando conductor";
+
+    if (err instanceof Error) {
+      // Detectar errores específicos de PostgreSQL
+      if (err.message.includes("duplicate key")) {
+        if (err.message.includes("license")) {
+          errorMsg = "La licencia ya está registrada";
+        } else if (err.message.includes("email")) {
+          errorMsg = "El email ya está registrado";
+        } else if (err.message.includes("license_plate")) {
+          errorMsg = "La placa del vehículo ya está registrada";
+        }
+      } else {
+        errorMsg = err.message;
+      }
+    }
+
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
+  } finally {
+    client.release();
   }
 }

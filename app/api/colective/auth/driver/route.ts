@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
         u.name,
         u.photo,
         u.role,
+        u.change_password,
 
         d.id AS driver_id,
         d.license,
@@ -71,6 +72,7 @@ export async function POST(req: NextRequest) {
         role: user.role,
         name: user.name,
         photo: user.photo,
+        change_password: user.change_password,
         driver: user.driver_id
           ? {
               id: user.driver_id,

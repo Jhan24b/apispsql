@@ -1,10 +1,13 @@
 import pool from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { driverId: string } }
+) {
   try {
-    const body = await req.json();
-    const { driverId, desvio, coords } = body;
+    const { desvio, coords } = await req.json();
+    const driverId = params.driverId;
 
     if (!driverId || !Array.isArray(coords) || coords.length === 0) {
       return NextResponse.json(
@@ -14,18 +17,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     const result = await pool.query(
-      `INSERT INTO "BDproyect"."path" (driverId, desvio, coords)
+      `INSERT INTO "BDproyect"."path" (driver_id, desvio, coordinates)
        VALUES ($1, $2, $3)
        RETURNING *;`,
       [driverId, desvio, coords]
     );
-
-    if (result.rows.length === 0) {
-      return NextResponse.json(
-        { error: "No se pudo insertar el registro" },
-        { status: 400 }
-      );
-    }
 
     return NextResponse.json({ result: result.rows[0] }, { status: 201 });
   } catch (err) {
@@ -37,20 +33,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { driverId: string } }
+) {
   try {
-    const { searchParams } = new URL(req.url);
-    const driverId = searchParams.get("driverId");
-
-    if (!driverId) {
-      return NextResponse.json(
-        { error: "Parámetro 'driverId' requerido" },
-        { status: 400 }
-      );
-    }
+    const driverId = params.driverId;
 
     const query = `
-      SELECT
+      SELECT 
         d.id AS driver_id,
         u.name AS driver_name,
         r.name AS route_name,

@@ -14,7 +14,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     const result = await pool.query(
-      `INSERT INTO "BDproyect"."path" (driverId, desvio, coords)
+      `INSERT INTO "BDproyect"."path" (driverId, desvio, coordinates)
        VALUES ($1, $2, $3)
        RETURNING *;`,
       [driverId, desvio, coords]

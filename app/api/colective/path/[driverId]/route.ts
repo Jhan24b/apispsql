@@ -37,29 +37,53 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 }
 
-// export async function GET(
-//   req: NextRequest,
-//   { params }: { params: { driverId: string } }
-// ) {
-//   const { driverId } = params;
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const driverId = searchParams.get("driverId");
 
-//   const routes = [
-//     {
-//       route_id: 12,
-//       route_name: "Centro Histórico",
-//       driver_name: "Carlos Vega",
-//       driver_photo: "https://cdn/img/driver12.jpg",
-//       desvio: false,
-//       coordinates: [
-//         { lat: -12.046, lng: -77.042, timestamp: "2025-11-10T12:00:00Z" },
-//         { lat: -12.047, lng: -77.041, timestamp: "2025-11-10T12:01:00Z" },
-//         { lat: -12.048, lng: -77.04, timestamp: "2025-11-10T12:02:00Z" },
-//         { lat: -12.049, lng: -77.039, timestamp: "2025-11-10T12:03:00Z" },
-//         { lat: -12.05, lng: -77.038, timestamp: "2025-11-10T12:04:00Z" },
-//       ],
-//       fecha: new Date().toISOString(),
-//     },
-//   ];
+    if (!driverId) {
+      return NextResponse.json(
+        { error: "Parámetro 'driverId' requerido" },
+        { status: 400 }
+      );
+    }
 
-//   return NextResponse.json({ routes, driverId });
-// }
+    const query = `
+      SELECT
+        d.id AS driver_id,
+        u.name AS driver_name,
+        r.name AS route_name,
+        p.desvio,
+        p.coordinates,
+        p.created_at
+      FROM "BDproyect"."path" p
+      JOIN "BDproyect"."drivers" d ON p.driver_id = d.id
+      JOIN "BDproyect"."route" r ON d.route_id = r.id
+      JOIN "BDproyect"."users" u ON d.user_id = u.id
+      WHERE p.driver_id = $1
+        AND p.created_at >= NOW() - INTERVAL '1 day'
+      ORDER BY p.created_at DESC
+      LIMIT 1;
+    `;
+
+    const result = await pool.query(query, [driverId]);
+
+    if (result.rows.length === 0) {
+      return NextResponse.json(
+        {
+          message: "No se encontraron registros recientes para este conductor"
+        },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ data: result.rows[0] }, { status: 200 });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json(
+      { error: "Error al obtener la información del conductor" },
+      { status: 500 }
+    );
+  }
+}

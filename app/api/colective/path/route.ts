@@ -4,20 +4,20 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const body = await req.json();
-    const { driverId, desvio, coords } = body;
+    const { travelId, coords } = body;
 
-    if (!driverId || !Array.isArray(coords) || coords.length === 0) {
+    if (!travelId || !Array.isArray(coords) || coords.length === 0) {
       return NextResponse.json(
-        { error: "Parámetros inválidos: falta driverId o coords[]" },
+        { error: "Parámetros inválidos: falta travelId o coords[]" },
         { status: 400 }
       );
     }
 
     const result = await pool.query(
-      `INSERT INTO "BDproyect"."path" ("driverId", desvio, coordinates)
-       VALUES ($1, $2, $3)
+      `INSERT INTO "BDproyect"."path" ("travelId", coordinates)
+       VALUES ($1, $2)
        RETURNING *;`,
-      [driverId, desvio, JSON.stringify(coords)]
+      [travelId, JSON.stringify(coords)]
     );
 
     if (result.rows.length === 0) {

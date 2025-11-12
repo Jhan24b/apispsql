@@ -16,20 +16,21 @@ export async function GET(
     }
 
     const query = `
-      SELECT 
+      SELECT
         d.id AS driver_id,
         u.name AS driver_name,
         r.name AS route_name,
-        p.desvio,
+        t.desvio,
         p.coordinates,
-        p.created_at
+        t.created_at
       FROM "BDproyect"."path" p
-      JOIN "BDproyect"."drivers" d ON p."driverId" = d.id
+      JOIN "BDproyect"."travel" t ON p."travelId" = t.id
+      JOIN "BDproyect"."drivers" d ON t."driver_id" = d.id
       JOIN "BDproyect"."route" r ON d.route_id = r.id
       JOIN "BDproyect"."users" u ON d.user_id = u.id
-      WHERE p."driverId" = $1
-        AND p.created_at >= NOW() - INTERVAL '1 day'
-      ORDER BY p.created_at DESC
+      WHERE d."driverId" = $1
+        AND t.started_at >= NOW() - INTERVAL '1 day'
+      ORDER BY t.started_at DESC
       LIMIT 1;
     `;
 

@@ -1,12 +1,17 @@
 import pool from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(
-  req: NextRequest,
-  context: { params: { driverId: string } }
-) {
+export async function GET(req: NextRequest) {
   try {
-    const { driverId } = context.params;
+    const { searchParams } = new URL(req.url);
+    const driverId = searchParams.get("driverId");
+
+    if (!driverId) {
+      return NextResponse.json(
+        { error: "Parámetro 'driverId' requerido" },
+        { status: 400 }
+      );
+    }
 
     const query = `
       SELECT 

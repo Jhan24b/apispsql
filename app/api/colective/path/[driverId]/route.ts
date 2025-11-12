@@ -1,10 +1,12 @@
 import pool from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(req: NextRequest) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { driverId: string } }
+) {
   try {
-    const { searchParams } = new URL(req.url);
-    const driverId = searchParams.get("driverId");
+    const { driverId } = params;
 
     if (!driverId) {
       return NextResponse.json(
@@ -19,13 +21,13 @@ export async function GET(req: NextRequest) {
         u.name AS driver_name,
         r.name AS route_name,
         p.desvio,
-        p.coordinates,
+        p.coords,
         p.created_at
       FROM "BDproyect"."path" p
-      JOIN "BDproyect"."drivers" d ON p.driver_id = d.id
+      JOIN "BDproyect"."drivers" d ON p."driverId" = d.id
       JOIN "BDproyect"."route" r ON d.route_id = r.id
       JOIN "BDproyect"."users" u ON d.user_id = u.id
-      WHERE p.driver_id = $1
+      WHERE p."driverId" = $1
         AND p.created_at >= NOW() - INTERVAL '1 day'
       ORDER BY p.created_at DESC
       LIMIT 1;

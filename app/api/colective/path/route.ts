@@ -17,7 +17,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       `INSERT INTO "BDproyect"."path" ("driverId", desvio, coordinates)
        VALUES ($1, $2, $3)
        RETURNING *;`,
-      [driverId, desvio, coords]
+      [driverId, desvio, JSON.stringify(coords)]
     );
 
     if (result.rows.length === 0) {

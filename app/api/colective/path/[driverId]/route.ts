@@ -21,7 +21,7 @@ export async function GET(
         u.name AS driver_name,
         r.name AS route_name,
         p.desvio,
-        p.coords,
+        p.coordinates,
         p.created_at
       FROM "BDproyect"."path" p
       JOIN "BDproyect"."drivers" d ON p."driverId" = d.id

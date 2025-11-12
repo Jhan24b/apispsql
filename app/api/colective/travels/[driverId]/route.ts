@@ -9,7 +9,7 @@ export async function GET(
     const { driverId } = await params;
 
     const result = await pool.query(
-      `SELECT rl.*, 
+      `SELECT rl.*,
               json_agg(i.*) AS incidents
        FROM "BDproyect"."travel" rl
        LEFT JOIN "BDproyect"."incidents" i ON i.route_id = rl.id

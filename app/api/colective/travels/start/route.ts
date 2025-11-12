@@ -3,14 +3,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const { driver_id, seq } = await req.json();
+    const { driver_id } = await req.json();
 
     const result = await pool.query(
-      `INSERT INTO "BDproyect"."travel" (driver_id, seq, started_at)
+      `INSERT INTO "BDproyect"."travel" (driver_id, started_at)
       VALUES ($1, $2, CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')
       RETURNING *;
       `,
-      [driver_id, seq]
+      [driver_id]
     );
 
     return NextResponse.json({ route: result.rows[0] });

@@ -65,6 +65,11 @@ export async function POST(req: NextRequest) {
       expiresIn: "7d"
     });
 
+    const actualizacionEstadoDriver = await pool.query(
+      `UPDATE "BDproyect"."drivers" SET status = "online" where user_id = $1 Returning *`,
+      [user.user_id]
+    );
+
     return NextResponse.json({
       user: {
         id: user.user_id,
@@ -109,3 +114,5 @@ export async function GET() {
     message: "Ruta logincolective viva 🚀"
   });
 }
+
+//FALTA CREAR RUTA PARA PODER REGISTRAR LA HORA DE ULTIMA CONEXION Y EL ESTADO A DESCONECTADO PARA CUANDO HAGA LOGOUT

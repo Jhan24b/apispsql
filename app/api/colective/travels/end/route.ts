@@ -3,16 +3,17 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const { travel_id } = await req.json();
+    const { travel_id, desvio } = await req.json();
 
     const result = await pool.query(
       `UPDATE "BDproyect"."travel"
        SET ended_at = CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima',
            duration = (CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima') - started_at,
-           completed = true
+           completed = true,
+           desvio = $2
        WHERE id = $1
        RETURNING *`,
-      [travel_id]
+      [travel_id, desvio]
     );
 
     if (result.rowCount === 0) {

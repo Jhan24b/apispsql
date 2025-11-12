@@ -3,10 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { driverId: string } }
+  context: { params: Promise<{ driverId: string }> }
 ) {
   try {
-    const { driverId } = await params;
+    const { driverId } = await context.params;
 
     if (!driverId) {
       return NextResponse.json(

@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
     });
 
     const actualizacionEstadoDriver = await pool.query(
-      `UPDATE "BDproyect"."drivers" SET status = "online" where user_id = $1 Returning *`,
+      `UPDATE "BDproyect"."drivers" SET status = 'online' where user_id = $1 Returning *`,
       [user.user_id]
     );
 

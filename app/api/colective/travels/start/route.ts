@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
 
     const result = await pool.query(
       `INSERT INTO "BDproyect"."travel" (driver_id, started_at)
-      VALUES ($1, $2, CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')
+      VALUES ($1, CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')
       RETURNING *;
       `,
       [driver_id]

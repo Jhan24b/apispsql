@@ -141,6 +141,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     } finally {
       client.release();
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Error en endpoint /api/colective/tracking:", error);
 

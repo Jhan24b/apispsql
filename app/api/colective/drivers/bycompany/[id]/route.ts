@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function OPTIONS(req: NextRequest) {
   const allowedOrigins = [
     "http://localhost:3000",
-    "https://colectivedrivery.vercel.app"
+    "https://colectivedriver.vercel.app"
   ];
 
   const origin = req.headers.get("origin");
@@ -29,7 +29,7 @@ export async function GET(
 ) {
   const allowedOrigins = [
     "http://localhost:3000",
-    "https://colectivedrivery.vercel.app"
+    "https://colectivedriver.vercel.app"
   ];
 
   const origin = req.headers.get("origin");

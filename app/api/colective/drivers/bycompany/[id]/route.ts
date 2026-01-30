@@ -1,10 +1,40 @@
 import pool from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
+export async function OPTIONS(req: NextRequest) {
+  const allowedOrigins = [
+    "http://localhost:3000",
+    "https://colectivedrivery.vercel.app"
+  ];
+
+  const origin = req.headers.get("origin");
+
+  if (origin && allowedOrigins.includes(origin)) {
+    return new NextResponse(null, {
+      status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Methods": "GET,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    });
+  }
+
+  return new NextResponse(null, { status: 200 });
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const allowedOrigins = [
+    "http://localhost:3000",
+    "https://colectivedrivery.vercel.app"
+  ];
+
+  const origin = req.headers.get("origin");
+  const isAllowed = origin && allowedOrigins.includes(origin);
+
   try {
     const { id } = await params;
 
@@ -68,7 +98,18 @@ export async function GET(
       }
     }));
 
-    return NextResponse.json(drivers);
+    const responseFinal = NextResponse.json(drivers);
+
+    if (isAllowed) {
+      responseFinal.headers.set("Access-Control-Allow-Origin", origin);
+      responseFinal.headers.set("Access-Control-Allow-Methods", "GET,OPTIONS");
+      responseFinal.headers.set(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization"
+      );
+    }
+
+    return responseFinal;
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Error" },

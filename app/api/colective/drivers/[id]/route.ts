@@ -5,6 +5,13 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const allowedOrigins = [
+    "http://localhost:3000",
+    "https://colectivedrivery.vercel.app"
+  ];
+
+  const origin = _req.headers.get("origin");
+  const isAllowed = origin && allowedOrigins.includes(origin);
   try {
     const { id } = await params;
 

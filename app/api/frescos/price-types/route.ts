@@ -2,16 +2,16 @@ import { type NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import pool from "@/lib/db";
 
-// GET - Obtener todos los vendedores
-export async function GET() {
+// GET - Obtener todos los tipos de precio
+export async function GET(req: NextRequest) {
   try {
     const result = await pool.query(`
-      SELECT * FROM "frescos"."vendors" 
+      SELECT * FROM "frescos"."price_types" 
       ORDER BY name ASC
     `);
 
     return NextResponse.json({
-      vendors: result.rows,
+      priceTypes: result.rows,
       total: result.rows.length
     });
   } catch (err: unknown) {
@@ -21,7 +21,7 @@ export async function GET() {
   }
 }
 
-// POST - Crear nuevo vendedor
+// POST - Crear nuevo tipo de precio
 export async function POST(req: NextRequest) {
   try {
     // Verificar token JWT
@@ -32,46 +32,43 @@ export async function POST(req: NextRequest) {
 
     jwt.verify(token, process.env.JWT_SECRET!);
 
-    const { name, last_name, phone, address, email } = await req.json();
+    const { name } = await req.json();
 
-    // Validaciones básicas
-    if (!name || !last_name || !phone) {
+    if (!name) {
       return NextResponse.json(
-        { error: "Campos requeridos: name, last_name, phone" },
+        { error: "El nombre es requerido" },
         { status: 400 }
       );
     }
 
-    // Verificar si el email ya existe
-    if (email) {
-      const existingVendor = await pool.query(
-        `
-        SELECT id FROM "frescos"."vendors" WHERE email = $1
-      `,
-        [email]
-      );
+    // Verificar si ya existe
+    const existing = await pool.query(
+      `
+      SELECT id FROM "frescos"."price_types" WHERE name = $1
+    `,
+      [name]
+    );
 
-      if (existingVendor.rows.length > 0) {
-        return NextResponse.json(
-          { error: "El email ya está registrado" },
-          { status: 400 }
-        );
-      }
+    if (existing.rows.length > 0) {
+      return NextResponse.json(
+        { error: "El tipo de precio ya existe" },
+        { status: 400 }
+      );
     }
 
     const result = await pool.query(
       `
-      INSERT INTO "frescos"."vendors" (name, last_name, phone, address, email)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO "frescos"."price_types" (name)
+      VALUES ($1)
       RETURNING *
     `,
-      [name, last_name, phone, address, email]
+      [name]
     );
 
     return NextResponse.json(
       {
-        message: "Vendedor creado exitosamente",
-        vendor: result.rows[0]
+        message: "Tipo de precio creado exitosamente",
+        priceType: result.rows[0]
       },
       { status: 201 }
     );

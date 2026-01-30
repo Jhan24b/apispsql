@@ -7,6 +7,7 @@ export async function GET(
 ) {
   const allowedOrigins = [
     "http://localhost:3000",
+    "https://colectivedriver.vercel.app",
     "https://colectivedrivery.vercel.app"
   ];
 

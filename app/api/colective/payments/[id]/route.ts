@@ -2,10 +2,35 @@ import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { DateTime } from "luxon";
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://colectivedriver.vercel.app"
+];
+
+export async function OPTIONS(req: NextRequest) {
+  const origin = req.headers.get("origin");
+
+  if (origin && allowedOrigins.includes(origin)) {
+    return new NextResponse(null, {
+      status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Methods": "GET,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    });
+  }
+
+  return new NextResponse(null, { status: 200 });
+}
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const origin = _req.headers.get("origin");
+  const isAllowed = origin && allowedOrigins.includes(origin);
+
   try {
     const { id } = await params;
 
@@ -32,7 +57,19 @@ export async function GET(
     row.verified_at = DateTime.fromJSDate(row.verified_at)
       .setZone("America/Lima")
       .toISO({ suppressMilliseconds: true });
-    return NextResponse.json(row);
+
+    const responseFinal = NextResponse.json(row);
+
+    if (isAllowed) {
+      responseFinal.headers.set("Access-Control-Allow-Origin", origin);
+      responseFinal.headers.set("Access-Control-Allow-Methods", "GET,OPTIONS");
+      responseFinal.headers.set(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization"
+      );
+    }
+
+    return responseFinal;
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Error" },
@@ -45,6 +82,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const origin = req.headers.get("origin");
+  const isAllowed = origin && allowedOrigins.includes(origin);
+
   try {
     const { id } = await params;
     const { status, method } = await req.json();
@@ -106,7 +146,19 @@ export async function PUT(
     row.verified_at = DateTime.fromJSDate(row.verified_at)
       .setZone("America/Lima")
       .toISO({ suppressMilliseconds: true });
-    return NextResponse.json(row);
+
+    const responseFinal = NextResponse.json(row);
+
+    if (isAllowed) {
+      responseFinal.headers.set("Access-Control-Allow-Origin", origin);
+      responseFinal.headers.set("Access-Control-Allow-Methods", "GET,OPTIONS");
+      responseFinal.headers.set(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization"
+      );
+    }
+
+    return responseFinal;
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Error" },
@@ -119,6 +171,9 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const origin = _req.headers.get("origin");
+  const isAllowed = origin && allowedOrigins.includes(origin);
+
   try {
     const { id } = await params;
 
@@ -134,10 +189,21 @@ export async function DELETE(
       );
     }
 
-    return NextResponse.json({
+    const responseFinal = NextResponse.json({
       message: "Pago eliminado correctamente",
       deleted: result.rows[0]
     });
+
+    if (isAllowed) {
+      responseFinal.headers.set("Access-Control-Allow-Origin", origin);
+      responseFinal.headers.set("Access-Control-Allow-Methods", "GET,OPTIONS");
+      responseFinal.headers.set(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization"
+      );
+    }
+
+    return responseFinal;
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Error" },

@@ -1,12 +1,12 @@
 import pool from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function OPTIONS(req: NextRequest) {
-  const allowedOrigins = [
-    "http://localhost:3000",
-    "https://colectivedriver.vercel.app"
-  ];
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://colectivedriver.vercel.app"
+];
 
+export async function OPTIONS(req: NextRequest) {
   const origin = req.headers.get("origin");
 
   if (origin && allowedOrigins.includes(origin)) {
@@ -27,11 +27,6 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const allowedOrigins = [
-    "http://localhost:3000",
-    "https://colectivedriver.vercel.app"
-  ];
-
   const origin = req.headers.get("origin");
   const isAllowed = origin && allowedOrigins.includes(origin);
 

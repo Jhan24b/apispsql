@@ -2,6 +2,28 @@ import pool from "@/lib/db";
 import { DateTime } from "luxon";
 import { NextRequest, NextResponse } from "next/server";
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://colectivedriver.vercel.app"
+];
+
+export async function OPTIONS(req: NextRequest) {
+  const origin = req.headers.get("origin");
+
+  if (origin && allowedOrigins.includes(origin)) {
+    return new NextResponse(null, {
+      status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Methods": "GET,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    });
+  }
+
+  return new NextResponse(null, { status: 200 });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { driver_id, amount } = await req.json();
@@ -32,7 +54,10 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const origin = req.headers.get("origin");
+  const isAllowed = origin && allowedOrigins.includes(origin);
+
   try {
     const result = await pool.query(
       `SELECT *
@@ -59,7 +84,18 @@ export async function GET() {
         : null
     }));
 
-    return NextResponse.json({ payments });
+    const responseFinal = NextResponse.json({ payments });
+
+    if (isAllowed) {
+      responseFinal.headers.set("Access-Control-Allow-Origin", origin);
+      responseFinal.headers.set("Access-Control-Allow-Methods", "GET,OPTIONS");
+      responseFinal.headers.set(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization"
+      );
+    }
+
+    return responseFinal;
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Error" },

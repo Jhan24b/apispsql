@@ -249,11 +249,15 @@ export async function DELETE(
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "Conductor eliminado correctamente",
-      headers: corsHeaders(_req.headers.get("origin"))
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Conductor eliminado correctamente"
+      },
+      {
+        headers: corsHeaders(_req.headers.get("origin"))
+      }
+    );
   } catch (err) {
     return NextResponse.json(
       {

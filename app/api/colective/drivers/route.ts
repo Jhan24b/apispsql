@@ -2,6 +2,28 @@ import pool from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://colectivedriver.vercel.app",
+  "https://colectivedrivery.vercel.app"
+];
+
+function corsHeaders(origin: string | null) {
+  return {
+    "Access-Control-Allow-Origin":
+      origin && allowedOrigins.includes(origin) ? origin : "",
+    "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization"
+  };
+}
+
+export async function OPTIONS(req: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders(req.headers.get("origin"))
+  });
+}
+
 export async function POST(req: NextRequest) {
   const client = await pool.connect();
 
@@ -154,7 +176,10 @@ export async function POST(req: NextRequest) {
         : null
     };
 
-    return NextResponse.json(driver, { status: 201 });
+    return NextResponse.json(driver, {
+      status: 201,
+      headers: corsHeaders(req.headers.get("origin"))
+    });
   } catch (err) {
     // Rollback en caso de error
     await client.query("ROLLBACK");
@@ -178,7 +203,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    return NextResponse.json(
+      { error: errorMsg },
+      { status: 500, headers: corsHeaders(req.headers.get("origin")) }
+    );
   } finally {
     client.release();
   }

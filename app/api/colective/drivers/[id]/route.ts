@@ -1,18 +1,34 @@
 import pool from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://colectivedriver.vercel.app",
+  "https://colectivedrivery.vercel.app"
+];
+
+function corsHeaders(origin: string | null) {
+  return {
+    "Access-Control-Allow-Origin":
+      origin && allowedOrigins.includes(origin) ? origin : "",
+    "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization"
+  };
+}
+
+export async function OPTIONS(req: NextRequest) {
+  const origin = req.headers.get("origin");
+
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders(origin)
+  });
+}
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const allowedOrigins = [
-    "http://localhost:3000",
-    "https://colectivedriver.vercel.app",
-    "https://colectivedrivery.vercel.app"
-  ];
-
-  const origin = _req.headers.get("origin");
-  const isAllowed = origin && allowedOrigins.includes(origin);
   try {
     const { id } = await params;
 
@@ -43,7 +59,10 @@ export async function GET(
     if (result.rows.length === 0) {
       return NextResponse.json(
         { error: "Conductor no encontrado" },
-        { status: 404 }
+        {
+          status: 404,
+          headers: corsHeaders(_req.headers.get("origin"))
+        }
       );
     }
 
@@ -75,7 +94,9 @@ export async function GET(
         : null
     };
 
-    return NextResponse.json(driver);
+    return NextResponse.json(driver, {
+      headers: corsHeaders(_req.headers.get("origin"))
+    });
   } catch (err) {
     return NextResponse.json(
       {
@@ -193,14 +214,16 @@ export async function PUT(
         : null
     };
 
-    return NextResponse.json(driver);
+    return NextResponse.json(driver, {
+      headers: corsHeaders(req.headers.get("origin"))
+    });
   } catch (err) {
     return NextResponse.json(
       {
         error:
           err instanceof Error ? err.message : "Error actualizando conductor"
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders(req.headers.get("origin")) }
     );
   }
 }
@@ -222,20 +245,21 @@ export async function DELETE(
     if (result.rows.length === 0) {
       return NextResponse.json(
         { error: "Conductor no encontrado" },
-        { status: 404 }
+        { status: 404, headers: corsHeaders(_req.headers.get("origin")) }
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: "Conductor eliminado correctamente"
+      message: "Conductor eliminado correctamente",
+      headers: corsHeaders(_req.headers.get("origin"))
     });
   } catch (err) {
     return NextResponse.json(
       {
         error: err instanceof Error ? err.message : "Error eliminando conductor"
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders(_req.headers.get("origin")) }
     );
   }
 }

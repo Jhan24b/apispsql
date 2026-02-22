@@ -157,8 +157,7 @@ export async function POST(req: NextRequest) {
     const origin = req.headers.get("origin");
     const allowedOrigins = [
       "http://localhost:3000",
-      "https://colectivedriver.vercel.app",
-      "https://colectivedrivery.vercel.app"
+      "https://colectivedriver.vercel.app"
     ];
 
     if (origin && allowedOrigins.includes(origin)) {

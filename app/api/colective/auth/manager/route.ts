@@ -33,6 +33,7 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  console.log("Auth Manager POST request received");
   try {
     const { email, password, role } = await req.json();
 

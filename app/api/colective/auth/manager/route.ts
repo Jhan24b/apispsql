@@ -6,7 +6,8 @@ import pool from "@/lib/db";
 export async function OPTIONS(req: NextRequest) {
   const allowedOrigins = [
     "http://localhost:3000",
-    "https://colectivedriver.vercel.app"
+    "https://colectivedriver.vercel.app",
+    "https://colectivedrivery.vercel.app"
   ];
 
   const origin = req.headers.get("origin");
@@ -157,7 +158,8 @@ export async function POST(req: NextRequest) {
     const origin = req.headers.get("origin");
     const allowedOrigins = [
       "http://localhost:3000",
-      "https://colectivedriver.vercel.app"
+      "https://colectivedriver.vercel.app",
+      "https://colectivedrivery.vercel.app"
     ];
 
     if (origin && allowedOrigins.includes(origin)) {

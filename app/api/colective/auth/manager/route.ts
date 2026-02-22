@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
       `,
       [email]
     );
+    
 
     if (result.rows.length === 0) {
       return applyCors(
@@ -68,8 +69,10 @@ export async function POST(req: NextRequest) {
     const user = result.rows[0];
     const valid = await bcrypt.compare(password, user.password);
 
+    console.log("Credenciales inválidas", password, user.password, valid, user.role, role);
+
+
     if (!valid) {
-      console.log("Credenciales inválidas", password, user.password, valid);
       return applyCors(
         req,
         NextResponse.json({ error: "Credenciales inválidas" }, { status: 401 })

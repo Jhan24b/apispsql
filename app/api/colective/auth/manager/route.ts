@@ -5,11 +5,11 @@ import pool from "@/lib/db";
 
 const allowedOrigins = [
   "http://localhost:3000",
-"https://colectivedriver.vercel.app",
+  "https://colectivedriver.vercel.app",
   "https://colectivedrivery.vercel.app"
 ];
 
-function corsResponse(req: NextRequest, res: NextResponse) {
+function applyCors(req: NextRequest, res: NextResponse) {
   const origin = req.headers.get("origin");
 
   if (origin && allowedOrigins.includes(origin)) {
@@ -21,7 +21,7 @@ function corsResponse(req: NextRequest, res: NextResponse) {
     );
     res.headers.set(
       "Access-Control-Allow-Methods",
-      "POST,GET,OPTIONS"
+      "POST, GET, OPTIONS"
     );
   }
 
@@ -29,12 +29,19 @@ function corsResponse(req: NextRequest, res: NextResponse) {
 }
 
 export async function OPTIONS(req: NextRequest) {
-  return corsResponse(req, new NextResponse(null, { status: 200 }));
+  return applyCors(req, new NextResponse(null, { status: 204 }));
 }
 
 export async function POST(req: NextRequest) {
   try {
     const { email, password, role } = await req.json();
+
+    if (!email || !password) {
+      return applyCors(
+        req,
+        NextResponse.json({ error: "Email y contraseña son requeridos" }, { status: 400 })
+      );
+    }
 
     // ============================================
     // 1. VALIDAR USUARIO
@@ -42,80 +49,73 @@ export async function POST(req: NextRequest) {
     const result = await pool.query(
       `
       SELECT 
-        u.id,
-        u.email,
-        u.password,
-        u.name,
-        u.photo,
-        u.role,
-        u.company_id,
-        c.name AS company_name,
-        c.logo AS company_logo
+        u.id, u.email, u.password, u.name, u.photo, u.role, u.company_id,
+        c.name AS company_name, c.logo AS company_logo
       FROM "BDproyect"."users" u
-      LEFT JOIN "BDproyect"."company" c
-        ON u.company_id = c.id
+      LEFT JOIN "BDproyect"."company" c ON u.company_id = c.id
       WHERE u.email = $1
       `,
       [email]
     );
 
     if (result.rows.length === 0) {
-      return corsResponse(
-    req,
-    NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
-  );
+      return applyCors(
+        req,
+        NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
+      );
     }
 
     const user = result.rows[0];
     const valid = await bcrypt.compare(password, user.password);
 
     if (!valid) {
-      return corsResponse(
-  req,
-  NextResponse.json(
-    { error: "Credenciales inválidas" },
-    { status: 401 }
-  )
-);
+      return applyCors(
+        req,
+        NextResponse.json({ error: "Credenciales inválidas" }, { status: 401 })
+      );
     }
 
     if (role && user.role !== role) {
-  return corsResponse(
-    req,
-    NextResponse.json({ error: "Rol no autorizado" }, { status: 403 })
-  );
-}
+      return applyCors(
+        req,
+        NextResponse.json({ error: "Rol no autorizado" }, { status: 403 })
+      );
+    }
 
     // ============================================
     // 2. GENERAR TOKENS
     // ============================================
+    const jwtSecret = process.env.JWT_SECRET;
+
+    if (!jwtSecret) {
+      throw new Error("Missing JWT_SECRET environment variable");
+    }
+
+    const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET || jwtSecret;
 
     // Access Token - corta duración (15 minutos)
     const accessToken = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET!,
+      jwtSecret,
       { expiresIn: "15m" }
     );
 
     // Refresh Token - larga duración (7 días)
     const refreshToken = jwt.sign(
       { id: user.id, email: user.email, type: "refresh" },
-      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET!,
+      jwtRefreshSecret,
       { expiresIn: "7d" }
     );
 
     // ============================================
     // 3. GUARDAR REFRESH TOKEN EN BD
     // ============================================
-    // Esto permite revocar tokens o hacer seguimiento
-
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 días
+    expiresAt.setDate(expiresAt.getDate() + 7);
 
     await pool.query(
       `
-      INSERT INTO "BDproyect"."refresh_tokens" 
-      (user_id, token, expires_at) 
+      INSERT INTO "BDproyect"."refresh_tokens" (user_id, token, expires_at) 
       VALUES ($1, $2, $3)
       `,
       [user.id, refreshToken, expiresAt]
@@ -124,8 +124,7 @@ export async function POST(req: NextRequest) {
     // ============================================
     // 4. PREPARAR RESPUESTA
     // ============================================
-
-    const response = NextResponse.json({
+    const responseData = {
       user: {
         id: user.id,
         email: user.email,
@@ -140,46 +139,40 @@ export async function POST(req: NextRequest) {
             }
           : null
       },
-      token: accessToken, // ← Access Token (15 min)
-      refreshToken: refreshToken // ← Refresh Token (7 días)
-    });
+      token: accessToken,
+      refreshToken: refreshToken
+    };
+
+    const response = NextResponse.json(responseData);
 
     // ============================================
     // 5. CONFIGURAR COOKIES SEGURAS
     // ============================================
+    const isProd = process.env.NODE_ENV === "production";
 
-    // Access Token en cookie (corta duración)
     response.cookies.set("auth_token", accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isProd,
       sameSite: "lax",
-      maxAge: 15 * 60, // 15 minutos
+      maxAge: 15 * 60,
       path: "/"
     });
 
-    // Refresh Token en cookie (larga duración)
     response.cookies.set("refresh_token", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isProd,
       sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60, // 7 días
+      maxAge: 7 * 24 * 60 * 60,
       path: "/auth/refresh"
     });
 
-    const origin = req.headers.get("origin");
-
-    if (origin && allowedOrigins.includes(origin)) {
-      response.headers.set("Access-Control-Allow-Origin", origin);
-      response.headers.set("Access-Control-Allow-Credentials", "true");
-    }
-
-    return response;
+    return applyCors(req, response);
   } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : "Error desconocido en el servidor";
-    return corsResponse(
-    req,
-    NextResponse.json({ error: message }, { status: 500 })
-  );
+    console.error("Auth Manager Error:", err);
+    const message = err instanceof Error ? err.message : "Error interno del servidor";
+    return applyCors(
+      req,
+      NextResponse.json({ error: message }, { status: 500 })
+    );
   }
 }

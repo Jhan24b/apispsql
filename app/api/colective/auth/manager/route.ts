@@ -3,28 +3,33 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import pool from "@/lib/db";
 
-export async function OPTIONS(req: NextRequest) {
-  const allowedOrigins = [
-    "http://localhost:3000",
-    "https://colectivedriver.vercel.app",
-    "https://colectivedrivery.vercel.app"
-  ];
+const allowedOrigins = [
+  "http://localhost:3000",
+"https://colectivedriver.vercel.app",
+  "https://colectivedrivery.vercel.app"
+];
 
+function corsResponse(req: NextRequest, res: NextResponse) {
   const origin = req.headers.get("origin");
 
   if (origin && allowedOrigins.includes(origin)) {
-    return new NextResponse(null, {
-      status: 200,
-      headers: {
-        "Access-Control-Allow-Origin": origin,
-        "Access-Control-Allow-Methods": "POST,GET,OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "Access-Control-Allow-Credentials": "true"
-      }
-    });
+    res.headers.set("Access-Control-Allow-Origin", origin);
+    res.headers.set("Access-Control-Allow-Credentials", "true");
+    res.headers.set(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization"
+    );
+    res.headers.set(
+      "Access-Control-Allow-Methods",
+      "POST,GET,OPTIONS"
+    );
   }
 
-  return new NextResponse(null, { status: 200 });
+  return res;
+}
+
+export async function OPTIONS(req: NextRequest) {
+  return corsResponse(req, new NextResponse(null, { status: 200 }));
 }
 
 export async function POST(req: NextRequest) {
@@ -55,25 +60,31 @@ export async function POST(req: NextRequest) {
     );
 
     if (result.rows.length === 0) {
-      return NextResponse.json(
-        { error: "Usuario no encontrado" },
-        { status: 404 }
-      );
+      return corsResponse(
+    req,
+    NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
+  );
     }
 
     const user = result.rows[0];
     const valid = await bcrypt.compare(password, user.password);
 
     if (!valid) {
-      return NextResponse.json(
-        { error: "Credenciales inválidas" },
-        { status: 401 }
-      );
+      return corsResponse(
+  req,
+  NextResponse.json(
+    { error: "Credenciales inválidas" },
+    { status: 401 }
+  )
+);
     }
 
     if (role && user.role !== role) {
-      return NextResponse.json({ error: "Rol no autorizado" }, { status: 403 });
-    }
+  return corsResponse(
+    req,
+    NextResponse.json({ error: "Rol no autorizado" }, { status: 403 })
+  );
+}
 
     // ============================================
     // 2. GENERAR TOKENS
@@ -156,11 +167,6 @@ export async function POST(req: NextRequest) {
     });
 
     const origin = req.headers.get("origin");
-    const allowedOrigins = [
-      "http://localhost:3000",
-      "https://colectivedriver.vercel.app",
-      "https://colectivedrivery.vercel.app"
-    ];
 
     if (origin && allowedOrigins.includes(origin)) {
       response.headers.set("Access-Control-Allow-Origin", origin);
@@ -171,6 +177,9 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     const message =
       err instanceof Error ? err.message : "Error desconocido en el servidor";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return corsResponse(
+    req,
+    NextResponse.json({ error: message }, { status: 500 })
+  );
   }
 }

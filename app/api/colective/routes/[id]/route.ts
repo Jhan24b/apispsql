@@ -1,9 +1,37 @@
 import pool from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://colectivedriver.vercel.app"
+];
+
+function applyCors(req: NextRequest, res: NextResponse) {
+  const origin = req.headers.get("origin");
+
+  if (origin && allowedOrigins.includes(origin)) {
+    res.headers.set("Access-Control-Allow-Origin", origin);
+    res.headers.set("Access-Control-Allow-Credentials", "true");
+    res.headers.set(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization"
+    );
+    res.headers.set(
+      "Access-Control-Allow-Methods",
+      "GET, PUT, DELETE, OPTIONS"
+    );
+  }
+
+  return res;
+}
+
+export async function OPTIONS(req: NextRequest) {
+  return applyCors(req, new NextResponse(null, { status: 204 }));
+}
+
 // GET /api/routes/[id]/full
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -17,11 +45,14 @@ export async function GET(
       [id]
     );
 
-    return NextResponse.json(result.rows);
+    return applyCors(req, NextResponse.json(result.rows));
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Error" },
-      { status: 500 }
+    return applyCors(
+      req,
+      NextResponse.json(
+        { error: err instanceof Error ? err.message : "Error" },
+        { status: 500 }
+      )
     );
   }
 }
@@ -41,28 +72,34 @@ export async function PUT(
        RETURNING *`,
       [name, companyId, id]
     );
-    return NextResponse.json({ route: result.rows[0] });
+    return applyCors(req, NextResponse.json({ route: result.rows[0] }));
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Error" },
-      { status: 500 }
+    return applyCors(
+      req,
+      NextResponse.json(
+        { error: err instanceof Error ? err.message : "Error" },
+        { status: 500 }
+      )
     );
   }
 }
 
 // DELETE /api/routes/[id]
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
     await pool.query(`DELETE FROM "BDproyect"."route" WHERE id = $1`, [id]);
-    return NextResponse.json({ success: true });
+    return applyCors(req, NextResponse.json({ success: true }));
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Error" },
-      { status: 500 }
+    return applyCors(
+      req,
+      NextResponse.json(
+        { error: err instanceof Error ? err.message : "Error" },
+        { status: 500 }
+      )
     );
   }
 }

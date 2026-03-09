@@ -51,6 +51,8 @@ export async function GET(
 
     const count = parseInt(result.rows[0]?.count || "0");
 
+    console.log(count)
+
     return NextResponse.json({ count });
   } catch (err: unknown) {
     const message =

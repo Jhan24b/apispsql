@@ -28,13 +28,21 @@ export async function POST(req: NextRequest) {
 
         c.license_plate,
         c.model,
-        c.observations
+        c.observations,
+
+        -- ✅ NUEVO: Campos de la compañía
+        co.id AS company_id,
+        co.name AS company_name,
+        co.logo AS company_logo
 
       FROM "BDproyect"."users" u
       LEFT JOIN "BDproyect"."drivers" d
         ON u.id = d.user_id
       LEFT JOIN "BDproyect"."cars" c
         ON d.car_id = c.id
+      -- ✅ NUEVO: JOIN con la tabla company
+      LEFT JOIN "BDproyect"."company" co
+        ON u.company_id = co.id
       WHERE u.email = $1
       `,
       [email]
@@ -78,6 +86,14 @@ export async function POST(req: NextRequest) {
         name: user.name,
         photo: user.photo,
         change_password: user.change_password,
+        // ✅ NUEVO: Objeto company completo
+        company: user.company_id
+          ? {
+              id: user.company_id,
+              name: user.company_name,
+              logo: user.company_logo
+            }
+          : null,
         driver: user.driver_id
           ? {
               id: user.driver_id,
@@ -101,7 +117,6 @@ export async function POST(req: NextRequest) {
       token
     });
   } catch (err: unknown) {
-    // 👇 Validamos si err es una instancia de Error
     const message =
       err instanceof Error ? err.message : "Error desconocido en el servidor";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -114,5 +129,6 @@ export async function GET() {
     message: "Ruta logincolective viva 🚀"
   });
 }
+
 
 //FALTA CREAR RUTA PARA PODER REGISTRAR LA HORA DE ULTIMA CONEXION Y EL ESTADO A DESCONECTADO PARA CUANDO HAGA LOGOUT

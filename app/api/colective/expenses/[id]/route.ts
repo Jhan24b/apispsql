@@ -21,12 +21,13 @@ function applyCors(req: NextRequest, res: NextResponse) {
 // GET: Obtener un gasto específico por ID
 export async function GET(
   req: NextRequest, 
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const result = await pool.query(
       `SELECT * FROM "BDproyect"."expense" WHERE id = $1`,
-      [params.id]
+      [id]
     );
 
     if (result.rows.length === 0) {
@@ -42,16 +43,17 @@ export async function GET(
 // PUT / PATCH: Actualizar un gasto
 export async function PUT(
   req: NextRequest, 
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { amount, description, category, date } = await req.json();
 
     const result = await pool.query(
       `UPDATE "BDproyect"."expense" 
        SET amount = $1, description = $2, category = $3, date = $4
        WHERE id = $5 RETURNING *`,
-      [amount, description, category, date, params.id]
+      [amount, description, category, date, id]
     );
 
     if (result.rows.length === 0) {
@@ -67,12 +69,13 @@ export async function PUT(
 // DELETE: Eliminar un gasto
 export async function DELETE(
   req: NextRequest, 
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const result = await pool.query(
       `DELETE FROM "BDproyect"."expense" WHERE id = $1 RETURNING *`,
-      [params.id]
+      [id]
     );
 
     if (result.rows.length === 0) {
